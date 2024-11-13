@@ -14,10 +14,12 @@ const AddPost = () => {
   const [category, setCategory] = useState("");
   const [rating, setRating] = useState(0);
   const [message, setMessage] = useState("");
-  
+
   const [postBlog, { isLoading }] = usePostBlogMutation();
   const { user } = useSelector((state) => state.auth);
-  
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     const editor = new EditorJS({
       holder: "editorjs",
@@ -36,25 +38,27 @@ const AddPost = () => {
         },
       },
     });
+
+    // Cleanup editor on component unmount
     return () => {
       editor.destroy();
       editorRef.current = null;
     };
   }, []);
 
-  const navigate = useNavigate();
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      // Ensure editor has been initialized before saving content
-      if (!editorRef.current) {
-        setMessage("Editor is not ready.");
-        return;
-      }
 
+    if (!editorRef.current) {
+      setMessage("Editor is not ready.");
+      return;
+    }
+
+    try {
+      // Save editor content
       const content = await editorRef.current.save();
-      
+
+      // Validate required fields
       if (!title || !coverImg || !category || !metaDescription || rating <= 0) {
         setMessage("Please fill in all fields.");
         return;
@@ -66,14 +70,19 @@ const AddPost = () => {
         content,
         category,
         description: metaDescription,
-        author: user?._id,
+        author: user?._id, // Check if user exists
         rating,
       };
 
+      // Submit the blog post
       const response = await postBlog(newPost).unwrap();
-      console.log(response);
-      alert("Blog is posted successfully!");
-      navigate("/");
+
+      if (response) {
+        alert("Blog posted successfully!");
+        navigate("/"); // Navigate to the home page after successful submission
+      } else {
+        setMessage("Authentication required.");
+      }
     } catch (error) {
       console.error("Failed to submit the post", error);
       setMessage("Failed to submit the post.");
@@ -82,10 +91,15 @@ const AddPost = () => {
 
   return (
     <div className="bg-white md:p-8 p-2">
-      <h2 className="text-2xl font-semibold text-gray-900">Create a New Blog Post</h2>
+      <h2 className="text-2xl font-semibold text-gray-900">
+        Create a New Blog Post
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-5 pt-8">
         <div className="space-y-4">
-          <label htmlFor="title" className="font-semibold text-xl text-gray-800">
+          <label
+            htmlFor="title"
+            className="font-semibold text-xl text-gray-800"
+          >
             Blog Title:
           </label>
           <input
@@ -101,13 +115,19 @@ const AddPost = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="md:w-2/3 w-full">
-            <p className="font-semibold text-xl mb-5 text-gray-800">Content Section</p>
-            <p className="text-xs italic text-gray-700">Write your post below here...</p>
+            <p className="font-semibold text-xl mb-5 text-gray-800">
+              Content Section
+            </p>
+            <p className="text-xs italic text-gray-700">
+              Write your post below here...
+            </p>
             <div id="editorjs"></div>
           </div>
 
           <div className="md:w-1/3 w-full border p-5 space-y-5 bg-gray-100">
-            <p className="text-xl font-semibold text-gray-800">Choose Blog Format</p>
+            <p className="text-xl font-semibold text-gray-800">
+              Choose Blog Format
+            </p>
             <div className="space-y-4">
               <label htmlFor="coverImg" className="font-semibold text-gray-800">
                 Blog Cover:
@@ -137,7 +157,10 @@ const AddPost = () => {
               />
             </div>
             <div className="space-y-4">
-              <label htmlFor="metaDescription" className="font-semibold text-gray-800">
+              <label
+                htmlFor="metaDescription"
+                className="font-semibold text-gray-800"
+              >
                 Meta Description:
               </label>
               <textarea
@@ -173,9 +196,9 @@ const AddPost = () => {
               <input
                 id="author"
                 type="text"
-                value={user.username}
+                value={user?.username || "Guest"}
                 className="w-full bg-gray-100 text-gray-900 focus:outline-none px-5 py-3 border border-gray-300"
-                placeholder={`${user.username} (not editable)`}
+                placeholder="Author (not editable)"
                 disabled
               />
             </div>
