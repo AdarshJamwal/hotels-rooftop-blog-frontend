@@ -9,15 +9,11 @@ const isTokenPresentInCookies = () => {
 // Utility function to get the initial state from localStorage
 const loadUserFromLocalStorage = () => {
   try {
-    // if (!isTokenPresentInCookies()) {
-    //   localStorage.removeItem('user');
-    //   return { user: null };
-    // }
-
     const serializedState = localStorage.getItem('user');
     if (serializedState === null) return { user: null };
     return { user: JSON.parse(serializedState) };
   } catch (err) {
+    console.error("Error loading user from localStorage", err);
     return { user: null };
   }
 };

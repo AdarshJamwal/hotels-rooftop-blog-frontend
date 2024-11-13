@@ -72,7 +72,8 @@ const AddPost = () => {
         rating,
       };
 
-      const response = await postBlog(newPost, {
+      const response = await postBlog({
+        ...newPost,
         headers: {
           Authorization: `Bearer ${token}`, // Send token here
         },

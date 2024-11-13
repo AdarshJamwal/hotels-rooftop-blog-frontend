@@ -24,4 +24,3 @@ const AdminLayout = () => {
 export default AdminLayout 
 
 
-// || this operator is used for the additional checking
