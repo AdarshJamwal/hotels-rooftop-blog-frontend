@@ -14,10 +14,10 @@ const AddPost = () => {
   const [category, setCategory] = useState("");
   const [rating, setRating] = useState(0);
   const [message, setMessage] = useState("");
-
+  
   const [postBlog, { isLoading }] = usePostBlogMutation();
   const { user } = useSelector((state) => state.auth);
-
+  
   useEffect(() => {
     const editor = new EditorJS({
       holder: "editorjs",
@@ -47,7 +47,19 @@ const AddPost = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Ensure editor has been initialized before saving content
+      if (!editorRef.current) {
+        setMessage("Editor is not ready.");
+        return;
+      }
+
       const content = await editorRef.current.save();
+      
+      if (!title || !coverImg || !category || !metaDescription || rating <= 0) {
+        setMessage("Please fill in all fields.");
+        return;
+      }
+
       const newPost = {
         title,
         coverImg,
@@ -57,27 +69,23 @@ const AddPost = () => {
         author: user?._id,
         rating,
       };
+
       const response = await postBlog(newPost).unwrap();
       console.log(response);
-      alert("Blog is posted Successfully");
+      alert("Blog is posted successfully!");
       navigate("/");
     } catch (error) {
-      console.log("Failed to Submit the post", error);
-      setMessage("Failed to submit the post");
+      console.error("Failed to submit the post", error);
+      setMessage("Failed to submit the post.");
     }
   };
 
   return (
     <div className="bg-white md:p-8 p-2">
-      <h2 className="text-2xl font-semibold text-gray-900">
-        Create a New Blog Post
-      </h2>
+      <h2 className="text-2xl font-semibold text-gray-900">Create a New Blog Post</h2>
       <form onSubmit={handleSubmit} className="space-y-5 pt-8">
         <div className="space-y-4">
-          <label
-            htmlFor="title"
-            className="font-semibold text-xl text-gray-800"
-          >
+          <label htmlFor="title" className="font-semibold text-xl text-gray-800">
             Blog Title:
           </label>
           <input
@@ -93,19 +101,13 @@ const AddPost = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="md:w-2/3 w-full">
-            <p className="font-semibold text-xl mb-5 text-gray-800">
-              Content Section
-            </p>
-            <p className="text-xs italic text-gray-700">
-              Write your post below here...
-            </p>
+            <p className="font-semibold text-xl mb-5 text-gray-800">Content Section</p>
+            <p className="text-xs italic text-gray-700">Write your post below here...</p>
             <div id="editorjs"></div>
           </div>
 
           <div className="md:w-1/3 w-full border p-5 space-y-5 bg-gray-100">
-            <p className="text-xl font-semibold text-gray-800">
-              Choose Blog Format
-            </p>
+            <p className="text-xl font-semibold text-gray-800">Choose Blog Format</p>
             <div className="space-y-4">
               <label htmlFor="coverImg" className="font-semibold text-gray-800">
                 Blog Cover:
@@ -116,7 +118,7 @@ const AddPost = () => {
                 value={coverImg}
                 onChange={(e) => setCoverImg(e.target.value)}
                 className="w-full bg-gray-100 text-gray-900 focus:outline-none px-5 py-3 border border-gray-300"
-                placeholder="http://unsplash.com/image/cover-photo-of-blog1.png.../"
+                placeholder="http://unsplash.com/image/cover-photo-of-blog1.png"
                 required
               />
             </div>
@@ -135,10 +137,7 @@ const AddPost = () => {
               />
             </div>
             <div className="space-y-4">
-              <label
-                htmlFor="metaDescription"
-                className="font-semibold text-gray-800"
-              >
+              <label htmlFor="metaDescription" className="font-semibold text-gray-800">
                 Meta Description:
               </label>
               <textarea
@@ -160,8 +159,11 @@ const AddPost = () => {
                 id="rating"
                 type="number"
                 value={rating}
-                onChange={(e) => setRating(e.target.value)}
+                onChange={(e) => setRating(Number(e.target.value))}
                 className="w-full bg-gray-100 text-gray-900 focus:outline-none px-5 py-3 border border-gray-300"
+                min="1"
+                max="5"
+                required
               />
             </div>
             <div className="space-y-4">
@@ -185,7 +187,7 @@ const AddPost = () => {
           disabled={isLoading}
           className="w-full mt-5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-md"
         >
-          Add New Blog
+          {isLoading ? "Submitting..." : "Add New Blog"}
         </button>
       </form>
     </div>
